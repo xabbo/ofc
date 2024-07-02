@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"io/fs"
@@ -42,17 +43,32 @@ type FigurePartSet struct {
 // Reverse color map from Figure Part Type -> Color (lowercase hex) -> Modern Color ID
 type ColorMap = map[string]map[string]int
 
+var opts struct {
+	quiet bool
+}
+
+var verbose = io.Discard
+
 func main() {
-	if err := run(os.Args[1:]); err != nil {
+	flag.Usage = func() {
+		name := os.Args[0]
+		if filepath.IsAbs(name) {
+			name = filepath.Base(os.Args[0])
+		}
+		if runtime.GOOS == "windows" {
+			name = strings.TrimSuffix(name, filepath.Ext(name))
+		}
+		fmt.Fprintf(os.Stderr, "Usage: %s [-v] [figureString]\n", name)
+	}
+	flag.BoolVar(&opts.quiet, "q", false, "Quiet output")
+	flag.Parse()
+
+	if !opts.quiet {
+		verbose = os.Stderr
+	}
+	if err := run(flag.Args()); err != nil {
 		if errors.Is(err, errUsage) {
-			name := os.Args[0]
-			if filepath.IsAbs(name) {
-				name = filepath.Base(os.Args[0])
-			}
-			if runtime.GOOS == "windows" {
-				name = strings.TrimSuffix(name, filepath.Ext(name))
-			}
-			fmt.Fprintf(os.Stderr, "usage: %s [figureString]\n", name)
+			flag.Usage()
 		} else {
 			fmt.Fprintf(os.Stderr, "Error: %s\n", err)
 		}
@@ -84,12 +100,12 @@ func run(args []string) (err error) {
 		return
 	}
 
-	fmt.Fprintf(os.Stderr, "Loading origins figure data... ")
+	fmt.Fprintf(verbose, "Loading origins figure data... ")
 	fd, err := loadOriginsFigureData()
 	if err != nil {
 		return
 	}
-	fmt.Fprintln(os.Stderr, "ok")
+	fmt.Fprintln(verbose, "ok")
 
 	// map part set id -> part set
 	setIds := map[int]FigurePartSet{}
@@ -139,13 +155,13 @@ func loadColorMap() (cm ColorMap, err error) {
 }
 
 func makeColorMap() (cm ColorMap, err error) {
-	fmt.Fprintf(os.Stderr, "Loading modern figure data... ")
+	fmt.Fprintf(verbose, "Loading modern figure data... ")
 	gdm := gd.NewGamedataManager("www.habbo.com")
 	err = gdm.Load(gd.GamedataFigure)
 	if err != nil {
 		return
 	}
-	fmt.Fprintln(os.Stderr, "ok")
+	fmt.Fprintln(verbose, "ok")
 
 	cm = map[string]map[string]int{}
 	for partType, paletteId := range gdm.Figure.SetPalettes {
