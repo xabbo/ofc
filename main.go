@@ -52,7 +52,7 @@ func main() {
 			if runtime.GOOS == "windows" {
 				name = strings.TrimSuffix(name, filepath.Ext(name))
 			}
-			fmt.Printf("usage: %s [figureString]\n", name)
+			fmt.Fprintf(os.Stderr, "usage: %s [figureString]\n", name)
 		} else {
 			fmt.Fprintf(os.Stderr, "Error: %s\n", err)
 		}
@@ -143,7 +143,6 @@ func makeColorMap() (cm ColorMap, err error) {
 	gdm := gd.NewGamedataManager("www.habbo.com")
 	err = gdm.Load(gd.GamedataFigure)
 	if err != nil {
-		fmt.Println(err)
 		return
 	}
 	fmt.Fprintln(os.Stderr, "ok")
