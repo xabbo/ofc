@@ -207,6 +207,9 @@ func loadOriginsFigureData() (fd FigureData, err error) {
 		}
 	}
 	err = json.Unmarshal(b, &fd)
+	if err != nil {
+		err = fmt.Errorf("weirdness in figure data!!! %w", err)
+	}
 	return
 }
 
