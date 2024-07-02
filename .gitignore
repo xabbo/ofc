@@ -1,0 +1,5 @@
+bin/
+testdata/
+
+colormap.json
+origins-figuredata.json
