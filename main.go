@@ -43,6 +43,34 @@ type FigurePartSet struct {
 // Reverse color map from Figure Part Type -> Color (lowercase hex) -> Modern Color ID
 type ColorMap = map[string]map[string]int
 
+// Hair -> hat map
+var hairToHatMap = map[int]int{
+	// m
+	120: 1001,
+	130: 1010,
+	140: 1004,
+	150: 1003,
+	160: 1004,
+	175: 1006,
+	176: 1007,
+	177: 1008,
+	178: 1009,
+	800: 1012,
+	801: 1011,
+	802: 1013,
+	// f
+	525: 1002,
+	535: 1003,
+	565: 1004,
+	570: 1005,
+	580: 1007,
+	585: 1006,
+	590: 1008,
+	595: 1009,
+	810: 1012,
+	811: 1013,
+}
+
 var opts struct {
 	quiet bool
 }
@@ -122,7 +150,7 @@ func run(args []string) (err error) {
 
 	for i := 0; i < 25; i += 5 {
 		setId, _ := strconv.Atoi(oldFigure[i : i+3])
-		colorId, _ := strconv.Atoi(oldFigure[i+3 : i+5])
+		colorIndex, _ := strconv.Atoi(oldFigure[i+3 : i+5])
 
 		set := setIds[setId]
 		nxPart := nx.FigurePart{
@@ -130,10 +158,17 @@ func run(args []string) (err error) {
 			Id:   setId,
 		}
 
-		colorId = colorMap[set.Type][strings.ToLower(set.Colors[colorId-1])]
+		partColor := strings.ToLower(set.Colors[colorIndex-1])
+		colorId := colorMap[set.Type][partColor]
 		nxPart.Colors = append(nxPart.Colors, colorId)
 
 		figure.Parts = append(figure.Parts, nxPart)
+
+		if nxPart.Type == nx.Hair {
+			if hatId, ok := hairToHatMap[nxPart.Id]; ok {
+				figure.Parts = append(figure.Parts, nx.FigurePart{Type: nx.Hat, Id: hatId, Colors: []int{colorId}})
+			}
+		}
 	}
 
 	fmt.Println(figure.String())
