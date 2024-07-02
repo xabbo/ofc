@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
+	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -149,10 +152,45 @@ func makeColorMap() (cm ColorMap, err error) {
 }
 
 func loadOriginsFigureData() (fd FigureData, err error) {
-	data, err := loadOrFetch(originsFigureDataFile, originsFigureDataUrl)
-	if err == nil {
-		fixOriginsFigureData(data)
-		err = json.Unmarshal(data, &fd)
+	f, err := os.OpenFile(originsFigureDataFile, os.O_RDWR|os.O_CREATE, 0644)
+	if err != nil {
+		return
 	}
+	defer f.Close()
+
+	fi, err := f.Stat()
+	if err != nil {
+		return
+	}
+
+	var b []byte
+	if fi.Size() == 0 {
+		var res *http.Response
+		res, err = http.Get(originsFigureDataUrl)
+		if err != nil {
+			return
+		}
+		if res.StatusCode != 200 {
+			err = errors.New(res.Status)
+			return
+		}
+		buf := bytes.NewBuffer(make([]byte, 0, res.ContentLength))
+		_, err = io.Copy(buf, res.Body)
+		if err == nil {
+			b = buf.Bytes()
+		}
+		fixOriginsFigureData(b)
+		_, err = f.Write(b)
+		if err != nil {
+			return
+		}
+	} else {
+		b = make([]byte, fi.Size())
+		_, err = io.ReadFull(f, b)
+		if err != nil {
+			return
+		}
+	}
+	err = json.Unmarshal(b, &fd)
 	return
 }
