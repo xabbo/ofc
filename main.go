@@ -58,7 +58,7 @@ func main() {
 		if runtime.GOOS == "windows" {
 			name = strings.TrimSuffix(name, filepath.Ext(name))
 		}
-		fmt.Fprintf(os.Stderr, "Usage: %s [-v] [figureString]\n", name)
+		fmt.Fprintf(os.Stderr, "Usage: %s [-q] [figureString]\n", name)
 	}
 	flag.BoolVar(&opts.quiet, "q", false, "Quiet output")
 	flag.Parse()
